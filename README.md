@@ -13,7 +13,7 @@ Prompt-driven TTS with voice cloning. The prompt itself controls speaker identit
 |---|---|
 | 🤗 **Model** | [`ResembleAI/Dramabox`](https://huggingface.co/ResembleAI/Dramabox) |
 | 🎭 **Demo Space** | [`ResembleAI/Dramabox`](https://huggingface.co/spaces/ResembleAI/Dramabox) (ZeroGPU) |
-| 🏗️ **Base model** | [`Lightricks/LTX-2`](https://huggingface.co/Lightricks/LTX-2) |
+| 🏗️ **Base model** | [`Lightricks/LTX-2.3`](https://huggingface.co/Lightricks/LTX-2.3) |
 | 📜 **License** | LTX-2 Community License — see [`LICENSE`](LICENSE) |
 
 ## Models
