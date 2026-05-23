@@ -112,7 +112,21 @@ Pass `--no-watermark` to `inference.py` (or `watermark=False` to `generate_to_fi
 
 ## Voice reference denoising (RE-USE)
 
-The voice reference is denoised with [`nvidia/RE-USE`](https://huggingface.co/nvidia/RE-USE) before VAE conditioning. On (defaults to `True`):
+> **Opt-in.** RE-USE deps (`mamba-ssm`, `causal-conv1d`, `librosa`, `resampy`)
+> are **not** installed by default — `mamba-ssm` / `causal-conv1d` have no
+> pre-built wheels on macOS / Windows and require matching CUDA + nvcc on
+> Linux, which breaks many fresh installs. The base `requirements.txt` skips
+> them; install only when you want voice-reference denoising:
+>
+> ```bash
+> pip install -r requirements-reuse.txt
+> ```
+>
+> If the deps are missing at runtime, the server logs a one-line "denoise
+> disabled — pip install -r requirements-reuse.txt to enable" warning and
+> continues generation without denoising the reference.
+
+When installed, the voice reference is denoised with [`nvidia/RE-USE`](https://huggingface.co/nvidia/RE-USE) before VAE conditioning. On (defaults to `True`):
 
 ```python
 server.generate_to_file(
@@ -125,7 +139,7 @@ server.generate_to_file(
 
 Setup is automatic — code (`.py` / `.yaml`, ~150 KB) is snapshot-downloaded into `~/.cache/dramabox/` on first call; weights (`~38 MB`) come from `SEMamba.from_pretrained` through the standard HF cache. Pass `$REUSE_DIR` or vendor at `third_party/RE-USE/` to skip the download.
 
-Optional kernels: `mamba-ssm` + `causal-conv1d`. If their wheels fail to build, the wrapper falls back to a pure-PyTorch path (5-10× slower, same output). RE-USE is [NSCLv1](https://github.com/NVlabs/HMAR/blob/main/LICENSE) (non-commercial) — set `denoise_ref=False` to skip.
+If the `mamba-ssm` / `causal-conv1d` wheels fail to build on a supported Linux box, the wrapper falls back to a pure-PyTorch path (5-10× slower, same output). RE-USE is [NSCLv1](https://github.com/NVlabs/HMAR/blob/main/LICENSE) (non-commercial) — set `denoise_ref=False` to skip.
 
 ## Long-form generation (text chunking)
 

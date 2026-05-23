@@ -31,6 +31,35 @@ def _resolve_reuse_dir() -> Path:
     return _REUSE_DIR
 
 
+# Probe at construction time rather than mid-generation: the deps live in
+# requirements-reuse.txt (opt-in install), and a fail-fast import here lets
+# the call site disable denoising up front with one clear log line instead
+# of crashing on the first request.
+_REUSE_OPT_DEPS = ("librosa", "resampy", "mamba_ssm")
+
+
+def _check_reuse_deps() -> None:
+    missing = [m for m in _REUSE_OPT_DEPS if _module_missing(m)]
+    if missing:
+        # Use the pip-package names (mamba-ssm, not mamba_ssm) in the message
+        # so copy-paste works.
+        pkgs = [m.replace("_", "-") for m in missing]
+        raise ImportError(
+            "Voice-reference denoising (RE-USE) requires optional dependencies "
+            f"not currently installed: {', '.join(pkgs)}.\n\n"
+            "    pip install -r requirements-reuse.txt\n\n"
+            "These are opt-in because mamba-ssm and causal-conv1d have no "
+            "pre-built wheels on macOS / Windows and require matching CUDA + "
+            "nvcc on Linux. To run without RE-USE, pass denoise_ref=False or "
+            "untick 'Denoise voice reference' in the Gradio UI."
+        )
+
+
+def _module_missing(name: str) -> bool:
+    import importlib.util
+    return importlib.util.find_spec(name) is None
+
+
 class REUSEUpsampler:
     """Universal speech enhancement with optional bandwidth extension.
 
@@ -51,6 +80,11 @@ class REUSEUpsampler:
         hop_portion: float = 0.5,
         device: str | torch.device = "cuda",
     ) -> None:
+        # Fail-fast if the opt-in RE-USE deps aren't installed. The caller
+        # (TTSServer._denoise_voice_ref) already wraps this constructor in a
+        # try/except — surfacing the error here means a clean "denoise
+        # disabled" log line at init instead of a crash on the first chunk.
+        _check_reuse_deps()
         # chunk_size_s: peak VRAM scales linearly with chunk length.
         #   5.0s -> 2.95 GB | 2.5s -> 1.52 GB | 1.0s -> 0.67 GB (default).
         # 1.0s is chosen as default so RE-USE fits comfortably on top of the
